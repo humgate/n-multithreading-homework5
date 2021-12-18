@@ -6,7 +6,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
-import java.util.stream.Collectors;
+
 
 public class NioClient {
 
@@ -20,6 +20,7 @@ public class NioClient {
         try (final SocketChannel socketChannel = SocketChannel.open()) {
             // подключаемся к серверу
             socketChannel.connect(socketAddress);
+            //неблокирующее взаимодействие
             socketChannel.configureBlocking(false);
             System.out.println("socketChannel.isBlocking()==" + socketChannel.isBlocking());
 
@@ -29,26 +30,28 @@ public class NioClient {
 
             String msg;
             System.out.println("Начало...");
-            msg = readTextFile("space-removal//largetextfile");
+            msg = readTextFile("space-removal//text.txt");
             System.out.println("Прочитали текстовый файл в переменную. Длина строки: " + msg.length());
 
-            //помещаем считанную строку в выходной байтовый буффер
+            //помещаем считанную строку в выходной байтовый буфер
             outputBuffer = ByteBuffer.wrap(msg.getBytes(StandardCharsets.UTF_8));
             System.out.println("Поместили строку в inputbuffer. Размер данных inputbuffer " + outputBuffer.remaining());
 
             int writtenBytes = socketChannel.write(outputBuffer);
             System.out.println("Запустили запись выходного буфера в выходной канал");
-            System.out.println(outputBuffer.remaining());
             System.out.println("Записано байт: " + writtenBytes);
 
-            scanner.nextLine();
-            int bytesCount = socketChannel.read(inputBuffer);
+            //scanner.nextLine();
+            Thread.sleep(6000);
 
+            int bytesCount = socketChannel.read(inputBuffer);
+            System.out.println("Запустили чтение входного буфера во входной канал");
+            System.out.println("Зачитано байт: " + bytesCount);
             System.out.println(new String(inputBuffer.array(), 0, bytesCount,
                     StandardCharsets.UTF_8).trim());
             inputBuffer.clear();
 
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
     }

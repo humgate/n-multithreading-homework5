@@ -11,6 +11,7 @@
     <modules>
         <module>complicated-calc</module>
         <module>space-removal</module>
+        <module>nio-pipe</module>
     </modules>
 
     <properties>
