@@ -26,7 +26,7 @@ public class NioSenderClient {
 
             System.out.println("Начало...");
             //читаем большой файл
-            String msg = readTextFile("space-removal//text.txt");
+            String msg = readTextFile("text.txt");
             System.out.println("Прочитали текстовый файл в переменную. Длина строки: " + msg.length());
 
             //помещаем считанную строку в выходной байтовый буфер

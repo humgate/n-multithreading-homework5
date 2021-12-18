@@ -1,5 +1,3 @@
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -9,65 +7,63 @@ import java.util.Scanner;
 
 
 public class NioClient {
+    static final String IP_ADDRESS = "localhost";
+    static final short PORT = 23334;
+    static final int BUFFER_SIZE = 2 << 20;
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
 
         // Определяем сокет сервера
-        InetSocketAddress socketAddress = new InetSocketAddress("127.0.0.1",
-                23334);
+        InetSocketAddress socketAddress = new InetSocketAddress(IP_ADDRESS, PORT);
 
         try (final SocketChannel socketChannel = SocketChannel.open()) {
             // подключаемся к серверу
             socketChannel.connect(socketAddress);
-            //неблокирующее взаимодействие
-            socketChannel.configureBlocking(false);
+            //неблокирующее взаимодействие, в данном примере разницы не увидеть
+            //socketChannel.configureBlocking(false);
             System.out.println("socketChannel.isBlocking()==" + socketChannel.isBlocking());
 
             // Определяем буфер для получения и отправки данных
-            final ByteBuffer inputBuffer = ByteBuffer.allocate(2 << 25);
-            ByteBuffer outputBuffer;// = ByteBuffer.allocate(2 << 25);
+            final ByteBuffer inputBuffer = ByteBuffer.allocate(BUFFER_SIZE);
+            ByteBuffer outputBuffer;
 
-            String msg;
-            System.out.println("Начало...");
-            msg = readTextFile("space-removal//text.txt");
-            System.out.println("Прочитали текстовый файл в переменную. Длина строки: " + msg.length());
+            Thread readerThread = new Thread(() -> {
+                String threadName = Thread.currentThread().getName();
+                int bytesCount = 0;
+                try {
+                    bytesCount = socketChannel.read(inputBuffer);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                System.out.println(threadName + ". Запустили чтение входного буфера во входной канал");
+                System.out.println(threadName + ". Зачитано байт: " + bytesCount);
+                System.out.println(threadName + ". Обработанная сервером строка: " +
+                        new String(inputBuffer.array(), 0, bytesCount, StandardCharsets.UTF_8).trim());
 
-            //помещаем считанную строку в выходной байтовый буфер
-            outputBuffer = ByteBuffer.wrap(msg.getBytes(StandardCharsets.UTF_8));
-            System.out.println("Поместили строку в inputbuffer. Размер данных inputbuffer " + outputBuffer.remaining());
+                inputBuffer.clear();
+            }, "readerThread");
 
-            int writtenBytes = socketChannel.write(outputBuffer);
-            System.out.println("Запустили запись выходного буфера в выходной канал");
-            System.out.println("Записано байт: " + writtenBytes);
+            readerThread.start();
 
-            //scanner.nextLine();
-            Thread.sleep(6000);
+            while (true) {
+                System.out.println("Введите строку...");
+                String msg = scanner.nextLine();
+                if ("end".equals(msg)) break;
 
-            int bytesCount = socketChannel.read(inputBuffer);
-            System.out.println("Запустили чтение входного буфера во входной канал");
-            System.out.println("Зачитано байт: " + bytesCount);
-            System.out.println(new String(inputBuffer.array(), 0, bytesCount,
-                    StandardCharsets.UTF_8).trim());
-            inputBuffer.clear();
+                //помещаем считанную строку в выходной байтовый буфер
+                outputBuffer = ByteBuffer.wrap(msg.getBytes(StandardCharsets.UTF_8));
 
+                //пишем в канал
+                int writtenBytes = socketChannel.write(outputBuffer);
+                System.out.println("Запустили запись выходного буфера в выходной канал");
+                System.out.println("Записано байт: " + writtenBytes);
+
+                Thread.sleep(1);
+            }
+            readerThread.join();
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
-        }
-    }
-
-    public static String readTextFile (String fileName) {
-        try (BufferedReader br = new BufferedReader(new FileReader(fileName))) {
-           //чтение построчно
-            StringBuilder stringBuffer = new StringBuilder();
-            String str;
-            while ((str = br.readLine()) != null) {
-                stringBuffer.append(str);
-            }
-            return stringBuffer.toString();
-        } catch (IOException ex) {
-            System.out.println("Ошибка ввода-вывода" + ex.getMessage());
-            return null;
         }
     }
 }
