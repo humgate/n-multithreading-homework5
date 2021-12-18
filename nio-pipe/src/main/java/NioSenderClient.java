@@ -20,7 +20,11 @@ public class NioSenderClient {
             // подключаемся к серверу
             socketChannel.connect(socketAddress);
 
-            //неблокирующее взаимодействие false, блокирующее - true
+            /*
+            * Неблокирующее взаимодействие false, блокирующее - true.
+            * В данном примере разницу в работе хорошо видно. См System.out а так же комментарии
+            * ниже по тексту
+             */
             socketChannel.configureBlocking(false);
             System.out.println("socketChannel.isBlocking()==" + socketChannel.isBlocking());
 
@@ -66,8 +70,6 @@ public class NioSenderClient {
                  */
                 Thread.sleep(2000);
             }
-
-
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
